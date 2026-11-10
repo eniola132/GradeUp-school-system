@@ -1,0 +1,44 @@
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### VS Code ###
+.vscode/
+
+### macOS / OS ###
+.DS_Store
+Thumbs.db
+
+### GradeUp runtime data ###
+# Local H2 database files
+/data/
+*.db
+*.mv.db
+*.trace.db
+
+# Uploaded handout PDFs (user content — never commit)
+/storage/
+
+# Logs
+*.log
+logs/
+
+### Agent scratch (local HyperFrames sandbox: node_modules, media, renders) ###
+/hyperframes-demo/

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="en">
+<!--/*
+  auth/signup.html - THE CREATE-ACCOUNT PAGE  ( /signup )
+  Shown by AuthController.signupForm(), and again by AuthController.signup()
+  if something was wrong. In that case it receives:
+    error        the message to show, e.g. "Those passwords don't match."
+    errorField   which input was wrong, so we can outline it in red
+    displayName, email   what the student typed, so they don't lose it
+*/-->
+<head th:replace="~{fragments/layout :: head('Create account')}"></head>
+<body>
+
+<div class="auth-wrap">
+    <aside class="auth-aside">
+        <a class="brand" th:href="@{/}">
+            <span class="brand-mark" aria-hidden="true">G</span>
+            <span>GradeUp</span>
+        </a>
+        <h2>Start studying smarter.</h2>
+        <p>Join students who spend less time re-reading and more time understanding.</p>
+
+        <ul class="auth-points">
+            <li>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                <span>Unlimited handout uploads</span>
+            </li>
+            <li>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                <span>Automatic key points and question banks</span>
+            </li>
+            <li>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                <span>Free to get started</span>
+            </li>
+        </ul>
+    </aside>
+
+    <main class="auth-main">
+        <div class="auth-form">
+            <h1>Create your account</h1>
+            <p class="auth-sub">It takes less than a minute.</p>
+
+            <div class="alert alert-danger" th:if="${error}">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/>
+                </svg>
+                <span th:text="${error}">Please check the form.</span>
+            </div>
+
+            <form th:action="@{/signup}" method="post" data-loading>
+                <div class="field">
+                    <label class="label" for="displayName">Your name</label>
+                    <!--/* Outline this input in red if it's the one with the problem. The same trick is used on each input below. */-->
+                    <input class="input" type="text" id="displayName" name="displayName"
+                           placeholder="Ama Mensah" required autofocus
+                           th:value="${displayName}"
+                           th:classappend="${errorField == 'displayName'} ? 'input-error'"
+                           autocomplete="name" maxlength="80">
+                </div>
+
+                <div class="field">
+                    <label class="label" for="email">Email address</label>
+                    <input class="input" type="email" id="email" name="email"
+                           placeholder="you@university.edu" required
+                           th:value="${email}"
+                           th:classappend="${errorField == 'email'} ? 'input-error'"
+                           autocomplete="email">
+                    <p class="hint">This will be your sign-in name.</p>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="password">Password</label>
+                    <input class="input" type="password" id="password" name="password"
+                           placeholder="At least 8 characters" required minlength="8"
+                           th:classappend="${errorField == 'password'} ? 'input-error'"
+                           autocomplete="new-password">
+                </div>
+
+                <div class="field">
+                    <label class="label" for="confirmPassword">Confirm password</label>
+                    <input class="input" type="password" id="confirmPassword" name="confirmPassword"
+                           placeholder="Type it again" required minlength="8"
+                           th:classappend="${errorField == 'confirmPassword'} ? 'input-error'"
+                           autocomplete="new-password">
+                </div>
+
+                <button class="btn btn-primary btn-block btn-lg" type="submit">Create account</button>
+            </form>
+
+            <p class="text-center text-sm text-muted mt-6 mb-0">
+                Already have an account?
+                <a th:href="@{/login}" class="font-bold">Sign in</a>
+            </p>
+        </div>
+    </main>
+</div>
+
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: GradeUp
+
+  # ---------------------------------------------------------------
+  # Default (dev) profile: H2 file database.
+  # Runs with zero setup. Data survives restarts.
+  # ---------------------------------------------------------------
+  datasource:
+    url: jdbc:h2:file:./data/gradeup;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 30MB
+
+  thymeleaf:
+    cache: false
+
+server:
+  # 8080 is used by another service in this environment; override with -DPORT=... or SERVER_PORT.
+  port: ${SERVER_PORT:8081}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+gradeup:
+  storage:
+    # Handout PDFs are stored here, outside the web root.
+    location: ./storage/handouts
+  upload:
+    max-size-bytes: 26214400   # 25 MB
+  ai:
+    # AI features degrade gracefully when no key is present.
+    provider: groq
+    api-key: ${GROQ_API_KEY:}
+    base-url: https://api.groq.com/openai/v1
+    model: llama-3.3-70b-versatile
+    timeout-seconds: 45
+    max-input-chars: 12000     # truncate handout text before sending to the LLM
+
+logging:
+  level:
+    root: INFO
+    com.gradeup: INFO

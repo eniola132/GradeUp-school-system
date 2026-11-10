@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="en">
+<!--/*
+  handouts/detail.html - ONE HANDOUT  ( /handouts/{id}?tab=... )
+  Shown by HandoutController.detail().
+  Values it receives:
+    handout        the handout, with its key points and questions
+    course         the course it belongs to
+    tab            which tab is open: 'keypoints', 'questions' or 'text'
+    aiDescription  name of the AI engine in use
+  Only ONE of the three <section>s below is shown, chosen by "tab".
+  Clicking a tab simply reloads the page with a different ?tab= value.
+*/-->
+<head th:replace="~{fragments/layout :: head(${handout.originalFilename})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav('courses')}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+
+<main class="page">
+    <div class="container">
+
+        <a class="text-sm text-muted"
+           th:href="@{/courses/{id}(id=${course.id})}"
+           th:text="'← ' + ${course.code} + ' · ' + ${course.title}">← Back</a>
+
+        <!-- Header -->
+        <div class="row-between mt-6 mb-6">
+            <div style="min-width:0">
+                <h1 class="mb-2 truncate" th:text="${handout.originalFilename}">handout.pdf</h1>
+                <div class="row row-wrap text-sm text-subtle">
+                    <span th:text="${handout.displaySize}">1 MB</span>
+                    <span aria-hidden="true">·</span>
+                    <span th:text="${handout.pageCount} + ' pages'">0</span>
+                    <span aria-hidden="true">·</span>
+                    <span th:text="'Uploaded ' + ${#temporals.format(handout.uploadedAt, 'd MMM yyyy')}">date</span>
+                    <span aria-hidden="true">·</span>
+                    <span th:text="'Engine: ' + ${aiDescription}">Engine</span>
+                </div>
+            </div>
+            <div class="row">
+                <a class="btn btn-primary btn-sm"
+                   th:href="@{/quiz/start(courseId=${course.id})}"
+                   th:if="${!handout.questions.isEmpty()}">Practice these questions</a>
+                <form th:action="@{/handouts/{id}/delete(id=${handout.id})}" method="post"
+                      class="inline-form"
+                      data-confirm="Delete this handout and all its key points and questions?">
+                    <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Extraction failure -->
+        <div class="alert alert-warning" th:if="${handout.status.name() == 'FAILED'}">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>
+                <path d="M12 9v4M12 17h.01"/>
+            </svg>
+            <span th:text="${handout.failureReason}">Could not read this PDF.</span>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs" role="tablist">
+            <a class="tab" th:classappend="${tab == 'keypoints'} ? 'active'"
+               th:href="@{/handouts/{id}(id=${handout.id}, tab='keypoints')}"
+               role="tab">
+                Key points
+                <span class="badge badge-outline" style="margin-left:6px"
+                      th:text="${handout.keyPoints.size()}">0</span>
+            </a>
+            <a class="tab" th:classappend="${tab == 'questions'} ? 'active'"
+               th:href="@{/handouts/{id}(id=${handout.id}, tab='questions')}"
+               role="tab">
+                Practice questions
+                <span class="badge badge-outline" style="margin-left:6px"
+                      th:text="${handout.questions.size()}">0</span>
+            </a>
+            <a class="tab" th:classappend="${tab == 'text'} ? 'active'"
+               th:href="@{/handouts/{id}(id=${handout.id}, tab='text')}"
+               role="tab">Original text</a>
+        </div>
+
+        <!-- ===== KEY POINTS ===== -->
+        <section th:if="${tab == 'keypoints'}">
+            <div class="row-between mb-4">
+                <p class="text-muted mb-0 text-sm">
+                    The most important ideas from this handout, ranked by importance.
+                </p>
+                <form th:action="@{/handouts/{id}/summarize(id=${handout.id})}" method="post"
+                      class="row" data-loading th:if="${handout.hasText()}">
+                    <select class="select" name="count" style="width:auto" aria-label="Number of key points">
+                        <option value="5">5 points</option>
+                        <option value="8" selected>8 points</option>
+                        <option value="12">12 points</option>
+                        <option value="16">16 points</option>
+                    </select>
+                    <button class="btn btn-secondary btn-sm" type="submit">
+                        <span th:text="${handout.keyPoints.isEmpty()} ? 'Generate' : 'Regenerate'">Generate</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="empty" th:if="${handout.keyPoints.isEmpty()}">
+                <div class="empty-icon">
+                    <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 11l3 3L22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                </div>
+                <h3>No key points yet</h3>
+                <p th:text="${handout.hasText()}
+                           ? 'Generate a summary to see the most important ideas from this handout.'
+                           : 'This handout has no readable text, so key points cannot be generated.'">
+                    Generate a summary.
+                </p>
+                <form th:action="@{/handouts/{id}/summarize(id=${handout.id})}" method="post"
+                      data-loading th:if="${handout.hasText()}">
+                    <input type="hidden" name="count" value="8">
+                    <button class="btn btn-primary" type="submit">Generate key points</button>
+                </form>
+            </div>
+
+            <div class="stack-sm" th:unless="${handout.keyPoints.isEmpty()}">
+                <!--/* "kp, iter": kp is the key point, iter tells us where we are in the loop (iter.count = 1, 2, 3...). */-->
+                <article class="keypoint" th:each="kp, iter : ${handout.keyPoints}">
+                    <span class="keypoint-num" th:text="${iter.count}">1</span>
+                    <div class="keypoint-text">
+                        <p class="mb-0" th:text="${kp.text}">Key point text.</p>
+                        <div class="keypoint-meta">
+                            <span class="badge"
+                                  th:classappend="${kp.importance >= 4} ? 'badge-violet' : 'badge-outline'"
+                                  th:text="${kp.importanceLabel}">Important</span>
+                            <span class="importance" th:attr="title=${kp.importance} + ' of 5'">
+                                <!--/* Five little bars; the first "importance" of them are filled in (class "on"). */-->
+                                <i th:each="n : ${#numbers.sequence(1,5)}"
+                                   th:classappend="${n <= kp.importance} ? 'on'"></i>
+                            </span>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- ===== QUESTIONS ===== -->
+        <section th:if="${tab == 'questions'}">
+            <div class="row-between mb-4">
+                <p class="text-muted mb-0 text-sm">
+                    Multiple-choice questions generated from this handout, with explanations.
+                </p>
+                <form th:action="@{/handouts/{id}/questions(id=${handout.id})}" method="post"
+                      class="row" data-loading th:if="${handout.hasText()}">
+                    <select class="select" name="count" style="width:auto" aria-label="Number of questions">
+                        <option value="4">4 more</option>
+                        <option value="6" selected>6 more</option>
+                        <option value="10">10 more</option>
+                    </select>
+                    <button class="btn btn-secondary btn-sm" type="submit">Generate more</button>
+                </form>
+            </div>
+
+            <div class="empty" th:if="${handout.questions.isEmpty()}">
+                <div class="empty-icon">
+                    <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>
+                    </svg>
+                </div>
+                <h3>No questions yet</h3>
+                <p th:text="${handout.hasText()}
+                           ? 'Generate practice questions to test your understanding.'
+                           : 'This handout has no readable text, so questions cannot be generated.'">
+                    Generate questions.
+                </p>
+                <form th:action="@{/handouts/{id}/questions(id=${handout.id})}" method="post"
+                      data-loading th:if="${handout.hasText()}">
+                    <input type="hidden" name="count" value="6">
+                    <button class="btn btn-primary" type="submit">Generate questions</button>
+                </form>
+            </div>
+
+            <div class="stack" th:unless="${handout.questions.isEmpty()}">
+                <article class="card" th:each="q, iter : ${handout.questions}">
+                    <div class="row-between mb-4">
+                        <span class="badge badge-outline" th:text="'Q' + ${iter.count}">Q1</span>
+                        <div class="row">
+                            <span class="badge"
+                                  th:classappend="${q.difficulty.name() == 'EASY'} ? 'badge-mint'
+                                                : (${q.difficulty.name() == 'HARD'} ? 'badge-rose' : 'badge-amber')"
+                                  th:text="${#strings.capitalize(#strings.toLowerCase(q.difficulty.name()))}">Medium</span>
+                            <span class="badge badge-outline" th:if="${q.angle != null}" th:text="${q.angle}">Recall</span>
+                        </div>
+                    </div>
+
+                    <p class="font-bold" style="white-space:pre-wrap" th:text="${q.prompt}">Question?</p>
+
+                    <div class="stack-sm mt-6">
+                        <!--/* Only the correct option is shown in the question bank (the th:if keeps just that letter). */-->
+                        <div class="option option-correct" th:each="letter : ${ {'A','B','C','D'} }"
+                             th:if="${q.correctOption == letter}">
+                            <span class="option-key" th:text="${letter}">A</span>
+                            <span class="option-text" th:text="${q.optionText(letter)}">Correct</span>
+                        </div>
+                    </div>
+
+                    <details class="mt-6" th:if="${q.explanation != null and !q.explanation.isBlank()}">
+                        <summary class="text-sm font-bold" style="cursor:pointer;color:var(--violet-600)">
+                            Show explanation
+                        </summary>
+                        <p class="text-sm text-muted mb-0" style="margin-top:var(--s3)"
+                           th:text="${q.explanation}">Explanation</p>
+                    </details>
+                </article>
+            </div>
+        </section>
+
+        <!-- ===== ORIGINAL TEXT ===== -->
+        <section th:if="${tab == 'text'}">
+            <p class="text-muted text-sm mb-4">
+                The text extracted from your PDF. This is what GradeUp reads when generating study material.
+            </p>
+
+            <div class="empty" th:if="${!handout.hasText()}">
+                <div class="empty-icon">
+                    <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <path d="M14 2v6h6"/>
+                    </svg>
+                </div>
+                <h3>No text could be extracted</h3>
+                <p>This PDF appears to be scanned or image-only. Try an original text-based PDF.</p>
+            </div>
+
+            <pre class="raw-text" th:if="${handout.hasText()}" th:text="${handout.extractedText}">text</pre>
+        </section>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

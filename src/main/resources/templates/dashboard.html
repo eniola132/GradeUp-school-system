@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="en">
+<!--/*
+  dashboard.html - THE STUDENT'S HOME PAGE  ( /dashboard )
+  Shown by DashboardController.dashboard().
+  Values it receives from the controller:
+    user            the logged-in student
+    courses         their courses (list)
+    courseCount, handoutCount, questionCount, averageScore   the four stat tiles
+    recentAttempts  recent quiz results (list)
+    lastHandout     the most recent handout, or null if there are none yet
+    aiDescription   name of the AI engine in use, e.g. "Offline study engine"
+    aiLive          true if the real online AI (Groq) is being used
+*/-->
+<head th:replace="~{fragments/layout :: head('Dashboard')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav('dashboard')}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+
+<main class="page">
+    <div class="container">
+
+        <!-- Greeting -->
+        <div class="row-between mb-6">
+            <div>
+                <!--/* split(' ')[0] takes the first word of their name: "Ama Mensah" -> "Ama". */-->
+                <h1 class="mb-2" th:text="'Hi, ' + ${user.displayName.split(' ')[0]} + ' 👋'">Hi there</h1>
+                <p class="text-muted mb-0">Here's your study snapshot.</p>
+            </div>
+            <div class="row">
+                <a class="btn btn-secondary" th:href="@{/courses/new}">New course</a>
+                <a class="btn btn-primary" th:href="@{/courses}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    Upload handout
+                </a>
+            </div>
+        </div>
+
+        <!-- AI status -->
+        <div class="alert" th:classappend="${aiLive} ? 'alert-success' : 'alert-info'">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8 5.8 21.3l2.4-7.4L2 9.4h7.6z"/>
+            </svg>
+            <span>
+                Study engine: <strong th:text="${aiDescription}">Offline</strong>.
+                <span th:if="${!aiLive}">
+                    Set <code>GROQ_API_KEY</code> to enable AI-powered summaries and questions —
+                    everything already works without it.
+                </span>
+            </span>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-4 mb-6">
+            <div class="stat">
+                <div class="stat-icon">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    </svg>
+                </div>
+                <div class="stat-value" th:text="${courseCount}">0</div>
+                <div class="stat-label">Courses</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-icon sky">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <path d="M14 2v6h6"/>
+                    </svg>
+                </div>
+                <div class="stat-value" th:text="${handoutCount}">0</div>
+                <div class="stat-label">Handouts</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-icon amber">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>
+                    </svg>
+                </div>
+                <div class="stat-value" th:text="${questionCount}">0</div>
+                <div class="stat-label">Practice questions</div>
+            </div>
+
+            <div class="stat">
+                <div class="stat-icon mint">
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+                    </svg>
+                </div>
+                <div class="stat-value" th:text="${averageScore} + '%'">0%</div>
+                <div class="stat-label">Average score</div>
+            </div>
+        </div>
+
+        <div class="grid grid-sidebar">
+            <!-- Courses -->
+            <section>
+                <div class="row-between mb-4">
+                    <h2 class="mb-0">Your courses</h2>
+                    <a class="text-sm font-bold" th:href="@{/courses}" th:if="${!courses.isEmpty()}">View all →</a>
+                </div>
+
+                <!-- Empty state -->
+                <div class="empty" th:if="${courses.isEmpty()}">
+                    <div class="empty-icon">
+                        <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                    </div>
+                    <h3>Create your first course</h3>
+                    <p>Courses keep your handouts, key points, and questions organised by subject.</p>
+                    <a class="btn btn-primary" th:href="@{/courses/new}">Create a course</a>
+                </div>
+
+                <div class="grid grid-2" th:unless="${courses.isEmpty()}">
+                    <!--/* One card per course. --accent sets the card's colour from course.colorTag (e.g. var(--mint-500)). */-->
+                    <a class="card card-hover card-accent" th:each="c : ${courses}"
+                       th:href="@{/courses/{id}(id=${c.id})}"
+                       th:style="'--accent: var(--' + ${c.colorTag} + '-500)'">
+                        <div class="row-between mb-2">
+                            <span class="badge badge-outline" th:text="${c.code}">CODE</span>
+                            <span class="text-xs text-subtle"
+                                  th:text="${#temporals.format(c.createdAt, 'd MMM')}">date</span>
+                        </div>
+                        <h3 class="mb-2" th:text="${c.title}">Course title</h3>
+                        <!--/* ?: means "use the description, or this text if there is none". */-->
+                        <p class="text-muted text-sm clamp-2 mb-4"
+                           th:text="${c.description} ?: 'No description yet.'">Description</p>
+                        <div class="row text-xs text-subtle">
+                            <span th:text="${c.handouts.size()} + ' handout(s)'">0 handouts</span>
+                            <span aria-hidden="true">·</span>
+                            <span th:text="${c.questionCount} + ' questions'">0 questions</span>
+                        </div>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Sidebar -->
+            <aside class="stack">
+                <!-- Continue studying -->
+                <div class="card card-pad-sm" th:if="${lastHandout != null}">
+                    <h4 class="mb-2">Continue studying</h4>
+                    <p class="text-sm text-muted mb-4 truncate"
+                       th:text="${lastHandout.originalFilename}">handout.pdf</p>
+                    <a class="btn btn-primary btn-block btn-sm"
+                       th:href="@{/handouts/{id}(id=${lastHandout.id})}">Open key points</a>
+                </div>
+
+                <!-- Quick practice -->
+                <div class="card card-pad-sm">
+                    <h4 class="mb-2">Quick practice</h4>
+                    <p class="text-sm text-muted mb-4">
+                        Test yourself with a short mixed quiz from any course.
+                    </p>
+                    <a class="btn btn-secondary btn-block btn-sm" th:href="@{/quiz/start}">Start a quiz</a>
+                </div>
+
+                <!-- Recent activity -->
+                <div class="card card-pad-sm">
+                    <h4 class="mb-4">Recent quizzes</h4>
+
+                    <p class="text-sm text-subtle mb-0" th:if="${recentAttempts.isEmpty()}">
+                        No quizzes taken yet. Your results will appear here.
+                    </p>
+
+                    <div class="stack-sm" th:unless="${recentAttempts.isEmpty()}">
+                        <a class="row-between" th:each="a : ${recentAttempts}"
+                           th:href="@{/quiz/results/{id}(id=${a.id})}"
+                           style="text-decoration:none">
+                            <div style="min-width:0">
+                                <div class="text-sm font-bold truncate" th:text="${a.course.code}">CODE</div>
+                                <div class="text-xs text-subtle"
+                                     th:text="${#temporals.format(a.startedAt, 'd MMM, HH:mm')}">when</div>
+                            </div>
+                            <span class="badge nowrap"
+                                  th:classappend="${a.passed} ? 'badge-mint' : 'badge-rose'"
+                                  th:text="${a.score} + '/' + ${a.totalQuestions}">0/0</span>
+                        </a>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

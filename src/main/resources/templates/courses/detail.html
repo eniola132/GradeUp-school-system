@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="en">
+<!--/*
+  courses/detail.html - ONE COURSE  ( /courses/{id} )
+  Shown by CourseController.detail().
+  Values it receives:
+    course          the course
+    handouts        its uploaded PDFs (list)
+    keyPointCount, questionCount   totals across all its handouts
+  On the left: the list of handouts. On the right: the upload form.
+*/-->
+<head th:replace="~{fragments/layout :: head(${course.title})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav('courses')}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+
+<main class="page">
+    <div class="container">
+
+        <a class="text-sm text-muted" th:href="@{/courses}">← Back to library</a>
+
+        <!-- Course header -->
+        <div class="card mt-6 mb-6 card-accent"
+             th:style="'--accent: var(--' + ${course.colorTag} + '-500)'">
+            <div class="row-between">
+                <div style="min-width:0">
+                    <span class="badge badge-outline mb-2" th:text="${course.code}">CODE</span>
+                    <h1 class="mb-2" th:text="${course.title}">Course</h1>
+                    <p class="text-muted mb-0"
+                       th:text="${course.description} ?: 'No description yet.'">desc</p>
+                </div>
+                <div class="row">
+                    <a class="btn btn-secondary btn-sm" th:href="@{/courses/{id}/edit(id=${course.id})}">Edit</a>
+                    <a class="btn btn-primary btn-sm"
+                       th:href="@{/quiz/start(courseId=${course.id})}"
+                       th:disabled="${questionCount == 0}">Practice</a>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="row row-wrap text-sm text-muted">
+                <span><strong th:text="${handouts.size()}">0</strong> handouts</span>
+                <span aria-hidden="true">·</span>
+                <span><strong th:text="${keyPointCount}">0</strong> key points</span>
+                <span aria-hidden="true">·</span>
+                <span><strong th:text="${questionCount}">0</strong> practice questions</span>
+            </div>
+        </div>
+
+        <div class="grid grid-sidebar">
+            <!-- Handouts -->
+            <section>
+                <h2 class="mb-4">Handouts</h2>
+
+                <div class="empty" th:if="${handouts.isEmpty()}">
+                    <div class="empty-icon">
+                        <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <path d="M14 2v6h6"/>
+                        </svg>
+                    </div>
+                    <h3>No handouts yet</h3>
+                    <p>Upload your first PDF handout and GradeUp will generate key points and questions automatically.</p>
+                </div>
+
+                <div class="stack-sm" th:unless="${handouts.isEmpty()}">
+                    <div class="card card-pad-sm card-hover" th:each="h : ${handouts}">
+                        <div class="row-between">
+                            <div style="min-width:0;flex:1">
+                                <a th:href="@{/handouts/{id}(id=${h.id})}"
+                                   class="font-bold" style="color:var(--text)">
+                                    <span class="truncate" th:text="${h.originalFilename}"
+                                          style="display:block">handout.pdf</span>
+                                </a>
+                                <div class="row text-xs text-subtle mt-0" style="margin-top:6px">
+                                    <span th:text="${h.displaySize}">1 MB</span>
+                                    <span aria-hidden="true">·</span>
+                                    <span th:text="${h.pageCount} + ' pages'">0 pages</span>
+                                    <span aria-hidden="true">·</span>
+                                    <span th:text="${#temporals.format(h.uploadedAt, 'd MMM yyyy')}">date</span>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!--/* Status badge: green "Ready" when key points and questions exist, red when reading the PDF failed, otherwise grey. */-->
+                                <span class="badge"
+                                      th:classappend="${h.status.name() == 'SUMMARIZED'} ? 'badge-mint'
+                                                    : (${h.status.name() == 'FAILED'} ? 'badge-rose' : 'badge-amber')"
+                                      th:text="${h.status.name() == 'SUMMARIZED'} ? 'Ready'
+                                             : (${h.status.name() == 'FAILED'} ? 'Failed' : 'Processing')">
+                                    Ready
+                                </span>
+                                <a class="btn btn-secondary btn-sm" th:href="@{/handouts/{id}(id=${h.id})}">Open</a>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-danger mb-0" style="margin-top:var(--s3)"
+                             th:if="${h.status.name() == 'FAILED'}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/>
+                            </svg>
+                            <span th:text="${h.failureReason}">Extraction failed</span>
+                        </div>
+
+                        <div class="row text-xs text-subtle" style="margin-top:var(--s3)"
+                             th:if="${h.status.name() == 'SUMMARIZED'}">
+                            <span th:text="${h.keyPoints.size()} + ' key points'">0</span>
+                            <span aria-hidden="true">·</span>
+                            <span th:text="${h.questions.size()} + ' questions'">0</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Upload sidebar -->
+            <aside class="stack">
+                <div class="card card-pad-sm">
+                    <h4 class="mb-2">Upload a handout</h4>
+                    <p class="text-sm text-muted mb-4">
+                        Add a lecture PDF. Key points and questions are generated automatically.
+                    </p>
+
+                    <!--/* Upload form. enctype="multipart/form-data" is required for sending files. app.js adds drag-and-drop. */-->
+                    <form th:action="@{/courses/{id}/handouts(id=${course.id})}"
+                          method="post" enctype="multipart/form-data" data-loading>
+
+                        <div class="dropzone" data-dropzone style="padding:var(--s6) var(--s4)">
+                            <div class="dropzone-icon">
+                                <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <path d="M17 8l-5-5-5 5M12 3v12"/>
+                                </svg>
+                            </div>
+                            <p class="font-bold text-sm mb-2">Drop your PDF here</p>
+                            <p class="text-xs text-subtle mb-0">or click to browse · max 25 MB</p>
+                            <p class="text-xs font-bold" data-dropzone-filename
+                               style="display:none;margin-top:var(--s3);color:var(--violet-600)"></p>
+                            <input type="file" name="file" accept="application/pdf,.pdf" required class="sr-only">
+                        </div>
+
+                        <button class="btn btn-primary btn-block mt-6" type="submit">
+                            Upload &amp; generate
+                        </button>
+                    </form>
+                </div>
+
+                <div class="card card-pad-sm">
+                    <h4 class="mb-2">Study tips</h4>
+                    <ul class="text-sm text-muted" style="padding-left:var(--s5);margin:0">
+                        <li style="margin-bottom:var(--s2)">Text-based PDFs work best — scanned images can't be read.</li>
+                        <li style="margin-bottom:var(--s2)">Upload one topic per handout for sharper key points.</li>
+                        <li>Take a quiz right after reading to lock it in.</li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

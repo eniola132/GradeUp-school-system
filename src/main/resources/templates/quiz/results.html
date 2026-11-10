@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="en">
+<!--/*
+  quiz/results.html - QUIZ RESULTS  ( /quiz/results/{id} )
+  Shown by QuizController.results().
+  Values it receives:
+    attempt   the finished quiz: score, percentage, grade, and every answer
+    course    the course the quiz was for
+  The score ring is animated by app.js (it reads the data-score-ring number).
+*/-->
+<head th:replace="~{fragments/layout :: head('Results')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav('history')}"></div>
+
+<main class="page">
+    <div class="container container-mid">
+
+        <!-- Score card -->
+        <div class="card text-center mb-6">
+            <span class="badge badge-outline" th:text="${course.code} + ' · ' + ${course.title}">CODE</span>
+
+            <!--/* th:attr sets any attribute. app.js reads data-score-ring and animates the circle up to that percentage. */-->
+            <div class="ring mt-6" th:attr="data-score-ring=${attempt.percentage}">
+                <svg width="168" height="168" viewBox="0 0 168 168">
+                    <defs>
+                        <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#6d5ae6"/>
+                            <stop offset="100%" stop-color="#2dd4a7"/>
+                        </linearGradient>
+                    </defs>
+                    <circle class="track" cx="84" cy="84" r="72"/>
+                    <circle class="value" cx="84" cy="84" r="72"/>
+                </svg>
+                <div class="ring-label">
+                    <div>
+                        <div class="ring-pct" th:text="${attempt.percentage} + '%'">0%</div>
+                        <div class="text-xs text-subtle" th:text="${attempt.score} + ' of ' + ${attempt.totalQuestions}">0 of 0</div>
+                    </div>
+                </div>
+            </div>
+
+            <h1 class="mt-6 mb-2" th:text="${attempt.passed} ? 'Well done! 🎉' : 'Keep going 💪'">Well done</h1>
+            <p class="text-muted" th:text="${attempt.passed}
+                       ? 'You passed this practice quiz. Review the explanations below to lock it in.'
+                       : 'Not quite there yet — review the explanations below, then try again.'">
+                Result summary.
+            </p>
+
+            <div class="row" style="justify-content:center;gap:var(--s5);flex-wrap:wrap">
+                <div>
+                    <div class="stat-value" style="font-size:var(--text-2xl)" th:text="${attempt.gradeLetter}">B</div>
+                    <div class="stat-label">Grade</div>
+                </div>
+                <div>
+                    <div class="stat-value" style="font-size:var(--text-2xl)" th:text="${attempt.durationLabel}">1m</div>
+                    <div class="stat-label">Time taken</div>
+                </div>
+                <div>
+                    <div class="stat-value" style="font-size:var(--text-2xl)"
+                         th:text="${attempt.totalQuestions - attempt.score}">0</div>
+                    <div class="stat-label">To review</div>
+                </div>
+            </div>
+
+            <div class="row mt-8" style="justify-content:center">
+                <a class="btn btn-primary" th:href="@{/quiz/start(courseId=${course.id})}">Practise again</a>
+                <a class="btn btn-secondary" th:href="@{/quiz/history}">See all results</a>
+                <a class="btn btn-ghost" th:href="@{/dashboard}">Back to dashboard</a>
+            </div>
+        </div>
+
+        <!-- Review -->
+        <h2 class="mb-4">Review your answers</h2>
+
+        <div class="stack">
+            <article class="card" th:each="a, iter : ${attempt.answers}">
+                <div class="row-between mb-4">
+                    <div class="row">
+                        <span class="badge badge-outline" th:text="'Q' + ${iter.count}">Q1</span>
+                        <span class="badge badge-mint" th:if="${a.correct}">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 6L9 17l-5-5"/>
+                            </svg>
+                            Correct
+                        </span>
+                        <span class="badge badge-rose" th:unless="${a.correct}">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                            <span th:text="${a.skipped} ? 'Skipped' : 'Incorrect'">Incorrect</span>
+                        </span>
+                    </div>
+                    <span class="badge badge-outline" th:if="${a.question.angle != null}"
+                          th:text="${a.question.angle}">Recall</span>
+                </div>
+
+                <p class="font-bold" style="white-space:pre-wrap" th:text="${a.question.prompt}">Question?</p>
+
+                <div class="stack-sm mt-6">
+                    <!-- Each option, marked correct / wrong -->
+                    <!--/* Each option: green if it's the correct answer, red if the student picked it and it was wrong. */-->
+                    <div th:each="letter : ${ {'A','B','C','D'} }"
+                         class="option"
+                         th:classappend="${a.question.correctOption == letter} ? 'option-correct'
+                                       : (${a.selectedOption != null and a.selectedOption == letter} ? 'option-wrong' : '')">
+                        <span class="option-key" th:text="${letter}">A</span>
+                        <span class="option-text" th:text="${a.question.optionText(letter)}">Option</span>
+                        <span class="badge badge-mint" th:if="${a.question.correctOption == letter}">Correct answer</span>
+                        <span class="badge badge-rose"
+                              th:if="${a.selectedOption != null and a.selectedOption == letter and a.question.correctOption != letter}">
+                            Your answer
+                        </span>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mb-0" style="margin-top:var(--s4)"
+                     th:if="${a.question.explanation != null and !a.question.explanation.isBlank()}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+                    </svg>
+                    <span th:text="${a.question.explanation}">Explanation</span>
+                </div>
+            </article>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="en">
+<!--/*
+  auth/login.html - THE SIGN-IN PAGE  ( /login )
+  Shown by AuthController.login().
+  The form posts to /login, where Spring Security checks the email and password
+  for us (see SecurityConfig). We never write that code ourselves.
+  Messages at the top:
+    ${justRegistered}  set by AuthController after a successful signup
+    ${param.error}     the address ends in ?error  (wrong email or password)
+    ${param.logout}    the address ends in ?logout (just signed out)
+  "param" means a value from the web address, not from the controller.
+*/-->
+<head th:replace="~{fragments/layout :: head('Sign in')}"></head>
+<body>
+
+<div class="auth-wrap">
+    <!-- Brand panel -->
+    <aside class="auth-aside">
+        <a class="brand" th:href="@{/}">
+            <span class="brand-mark" aria-hidden="true">G</span>
+            <span>GradeUp</span>
+        </a>
+        <h2>Welcome back.</h2>
+        <p>Pick up where you left off — your key points and practice questions are waiting.</p>
+
+        <ul class="auth-points">
+            <li>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                <span>Ranked key points from every handout</span>
+            </li>
+            <li>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                <span>Practice questions with explanations</span>
+            </li>
+            <li>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                <span>Progress tracking across all your courses</span>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Form panel -->
+    <main class="auth-main">
+        <div class="auth-form">
+            <h1>Sign in</h1>
+            <p class="auth-sub">Enter your details to continue studying.</p>
+
+            <div class="alert alert-success" th:if="${justRegistered}">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                <span>Account created. You can sign in now.</span>
+            </div>
+            <div class="alert alert-danger" th:if="${param.error}">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/>
+                </svg>
+                <span>That email and password combination doesn't match our records.</span>
+            </div>
+            <div class="alert alert-info" th:if="${param.logout}">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>
+                </svg>
+                <span>You've been signed out. See you soon.</span>
+            </div>
+
+            <form th:action="@{/login}" method="post" data-loading>
+                <div class="field">
+                    <label class="label" for="email">Email address</label>
+                    <input class="input" type="email" id="email" name="email"
+                           placeholder="you@university.edu" required autofocus
+                           autocomplete="email">
+                </div>
+
+                <div class="field">
+                    <label class="label" for="password">Password</label>
+                    <input class="input" type="password" id="password" name="password"
+                           placeholder="Your password" required autocomplete="current-password">
+                </div>
+
+                <button class="btn btn-primary btn-block btn-lg" type="submit">Sign in</button>
+            </form>
+
+            <p class="text-center text-sm text-muted mt-6 mb-0">
+                New to GradeUp?
+                <a th:href="@{/signup}" class="font-bold">Create an account</a>
+            </p>
+        </div>
+    </main>
+</div>
+
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

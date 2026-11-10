@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="en">
+<!--/*
+  courses/library.html - "MY COURSES"  ( /courses )
+  Shown by CourseController.library().
+  Values it receives:
+    courses       the courses to show (all of them, or only search matches)
+    query         what was typed in the search box ("" if nothing)
+    totalCourses  how many courses the student has in total
+  The page has three possible states:
+    1. no courses at all          -> "create your first course"
+    2. a search found nothing     -> "no courses match ..."
+    3. otherwise                  -> a grid of course cards
+*/-->
+<head th:replace="~{fragments/layout :: head('My Courses')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav('courses')}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+
+<main class="page">
+    <div class="container">
+
+        <div class="row-between mb-6">
+            <div>
+                <h1 class="mb-2">My Course Library</h1>
+                <p class="text-muted mb-0">
+                    <span th:text="${totalCourses}">0</span> course(s) in your library.
+                </p>
+            </div>
+            <a class="btn btn-primary" th:href="@{/courses/new}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                New course
+            </a>
+        </div>
+
+        <!-- Search -->
+        <form class="mb-6" th:action="@{/courses}" method="get" role="search">
+            <div class="row">
+                <input class="input" type="search" name="q" th:value="${query}"
+                       placeholder="Search by course code or title…" aria-label="Search courses">
+                <button class="btn btn-secondary" type="submit">Search</button>
+                <a class="btn btn-ghost" th:href="@{/courses}" th:if="${!query.isEmpty()}">Clear</a>
+            </div>
+        </form>
+
+        <!-- Empty: no courses at all -->
+        <div class="empty" th:if="${courses.isEmpty() and query.isEmpty()}">
+            <div class="empty-icon">
+                <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+            </div>
+            <h3>Your library is empty</h3>
+            <p>Create a course for each subject you're studying, then upload your handouts to it.</p>
+            <a class="btn btn-primary" th:href="@{/courses/new}">Create your first course</a>
+        </div>
+
+        <!-- Empty: search returned nothing -->
+        <div class="empty" th:if="${courses.isEmpty() and !query.isEmpty()}">
+            <div class="empty-icon">
+                <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/>
+                </svg>
+            </div>
+            <h3>No courses match "<span th:text="${query}">query</span>"</h3>
+            <p>Try a different search term, or clear the search to see everything.</p>
+            <a class="btn btn-secondary" th:href="@{/courses}">Clear search</a>
+        </div>
+
+        <div class="grid grid-3" th:unless="${courses.isEmpty()}">
+            <a class="card card-hover card-accent" th:each="c : ${courses}"
+               th:href="@{/courses/{id}(id=${c.id})}"
+               th:style="'--accent: var(--' + ${c.colorTag} + '-500)'">
+                <div class="row-between mb-2">
+                    <span class="badge badge-outline" th:text="${c.code}">CODE</span>
+                    <span class="text-xs text-subtle"
+                          th:text="${#temporals.format(c.createdAt, 'd MMM yyyy')}">date</span>
+                </div>
+                <h3 class="mb-2" th:text="${c.title}">Course</h3>
+                <p class="text-muted text-sm clamp-2 mb-4"
+                   th:text="${c.description} ?: 'No description yet.'">desc</p>
+                <div class="row text-xs text-subtle">
+                    <span th:text="${c.handouts.size()} + ' handouts'">0</span>
+                    <span aria-hidden="true">·</span>
+                    <span th:text="${c.keyPointCount} + ' key points'">0</span>
+                    <span aria-hidden="true">·</span>
+                    <span th:text="${c.questionCount} + ' questions'">0</span>
+                </div>
+            </a>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

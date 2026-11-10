@@ -1,0 +1,32 @@
+# =====================================================================
+# Production profile — MySQL 8.4
+#
+# Activate with:  ./mvnw spring-boot:run -Dspring-boot.run.profiles=prod
+#
+# All credentials come from environment variables.
+# Never commit real credentials to this file.
+# =====================================================================
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/gradeup?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USER:gradeup}
+    password: ${DB_PASSWORD:}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
+
+  h2:
+    console:
+      enabled: false
+
+  thymeleaf:
+    cache: true
+
+logging:
+  level:
+    root: WARN
+    com.gradeup: INFO

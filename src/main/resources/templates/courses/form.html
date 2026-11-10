@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="en">
+<!--/*
+  courses/form.html - CREATE OR EDIT A COURSE
+  Used for TWO pages:
+    /courses/new        (CourseController.newCourseForm) - no "course" value is given
+    /courses/{id}/edit  (CourseController.editForm)      - "course" is the course to edit
+  That's why many lines check "course != null and course.id != null":
+  true means we're editing, false means we're creating a new course.
+*/-->
+<head th:replace="~{fragments/layout :: head('Course')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav('courses')}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+
+<main class="page">
+    <div class="container container-narrow">
+
+        <a class="text-sm text-muted" th:href="@{/courses}">← Back to library</a>
+
+        <div class="card mt-6">
+            <h1 th:text="${course != null} ? (${course.id} != null ? 'Edit course' : 'New course') : 'New course'">
+                New course
+            </h1>
+            <p class="text-muted text-sm">
+                Give your course a name you'll recognise — you can upload handouts straight after.
+            </p>
+
+            <!--/* Editing -> post to /courses/{id} (CourseController.update). Creating -> post to /courses (CourseController.create). */-->
+            <form th:action="${course != null and course.id != null}
+                                ? @{/courses/{id}(id=${course.id})}
+                                : @{/courses}"
+                  method="post" class="mt-6">
+
+                <div class="grid grid-2">
+                    <div class="field">
+                        <label class="label" for="code">Course code</label>
+                        <input class="input" type="text" id="code" name="code"
+                               placeholder="CSC301" maxlength="32" required
+                               th:value="${course != null} ? ${course.code} : ''">
+                        <p class="hint">Short code, e.g. CSC301 or MTH202.</p>
+                    </div>
+
+                    <div class="field">
+                        <label class="label" for="title">Course title</label>
+                        <input class="input" type="text" id="title" name="title"
+                               placeholder="Data Structures &amp; Algorithms" maxlength="160" required
+                               th:value="${course != null} ? ${course.title} : ''">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="description">Description <span class="text-subtle">(optional)</span></label>
+                    <textarea class="textarea" id="description" name="description" maxlength="600"
+                              placeholder="What does this course cover?"
+                              th:text="${course != null} ? ${course.description} : ''"></textarea>
+                </div>
+
+                <div class="field">
+                    <span class="label">Accent colour</span>
+                    <div class="row row-wrap" data-color-picker style="gap:var(--s3)">
+                        <!--/* ${ {'a','b'} } is a list written directly in the page. One colour circle is made for each colour. When creating a course, violet is pre-selected. */-->
+                        <label class="swatch" th:each="c : ${ {'violet','mint','amber','rose','sky'} }"
+                               th:classappend="${course != null and course.colorTag == c} ? 'selected'"
+                               style="cursor:pointer">
+                            <input type="radio" name="colorTag" th:value="${c}" class="sr-only"
+                                   th:checked="${course == null} ? (${c == 'violet'}) : (${course.colorTag == c})">
+                            <span style="display:block;width:38px;height:38px;border-radius:12px;
+                                         border:3px solid transparent;transition:all .15s"
+                                  th:style="'background: var(--' + ${c} + '-500);
+                                             border-color:' + (${course != null and course.colorTag == c} ? 'var(--text)' : 'transparent')">
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="row mt-8">
+                    <button class="btn btn-primary" type="submit"
+                            th:text="${course != null and course.id != null} ? 'Save changes' : 'Create course'">
+                        Create course
+                    </button>
+                    <a class="btn btn-ghost"
+                       th:href="${course != null and course.id != null}
+                                ? @{/courses/{id}(id=${course.id})} : @{/courses}">Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Delete -->
+        <div class="card mt-6" th:if="${course != null and course.id != null}">
+            <h4 class="mb-2">Delete this course</h4>
+            <p class="text-muted text-sm">
+                This permanently removes the course along with all its handouts, key points, and
+                practice questions. This cannot be undone.
+            </p>
+            <form th:action="@{/courses/{id}/delete(id=${course.id})}" method="post"
+                  data-confirm="Delete this course and everything in it? This cannot be undone.">
+                <button class="btn btn-danger" type="submit">Delete course</button>
+            </form>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

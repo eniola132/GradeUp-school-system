@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    # In-memory database for tests: fast, isolated, and independent of any dev data.
+    url: jdbc:h2:mem:gradeup-test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+gradeup:
+  storage:
+    location: ./target/test-storage
+  ai:
+    # Tests must never require a network or an API key.
+    api-key: ""

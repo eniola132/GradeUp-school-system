@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="en">
+<!--/*
+  error/500.html - "SOMETHING WENT WRONG" PAGE
+  Shown by GlobalExceptionHandler.handleUnexpected() when an unexpected error
+  happens. The technical details go to the server log, never to the student.
+*/-->
+<head th:replace="~{fragments/layout :: head('Something went wrong')}"></head>
+<body>
+<main class="page">
+    <div class="container container-narrow text-center" style="padding-top:var(--s16)">
+        <div class="empty-icon" style="margin-bottom:var(--s6);background:var(--rose-100);color:var(--rose-600)">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>
+                <path d="M12 9v4M12 17h.01"/>
+            </svg>
+        </div>
+        <h1>Something went wrong</h1>
+        <p class="text-muted">
+            An unexpected error occurred on our side. Your work is safe — please try again.
+        </p>
+        <div class="row mt-8" style="justify-content:center">
+            <a class="btn btn-primary" th:href="@{/dashboard}">Back to dashboard</a>
+        </div>
+    </div>
+</main>
+</body>
+</html>

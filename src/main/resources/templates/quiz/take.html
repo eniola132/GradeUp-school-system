@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="en">
+<!--/*
+  quiz/take.html - TAKING A QUIZ  ( /quiz/take?index=0 )
+  Shown by QuizController.take().
+  Values it receives:
+    course, questions, total   the quiz
+    index, question            the question on screen right now (index 0 = the first)
+    answers                    answers given so far: question id -> letter
+    selected                   the answer already given to THIS question (or null)
+    instantFeedback            did the student turn on instant feedback?
+    checked                    true if this question's answer should be revealed
+    showAll                    true to show every question on one page instead
+  Every button submits the form to /quiz/submit, so the chosen answer is always
+  saved before moving to another question (see QuizController.submit).
+*/-->
+<head th:replace="~{fragments/layout :: head('Quiz')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: nav('quiz')}"></div>
+
+<main class="page">
+    <div class="container container-mid">
+
+        <!-- Progress -->
+        <div class="quiz-head">
+            <div>
+                <span class="badge badge-outline" th:text="${course.code}">CODE</span>
+                <span class="quiz-counter" style="margin-left:var(--s2)"
+                      th:text="'Question ' + (${index} + 1) + ' of ' + ${total}"
+                      th:if="${!showAll}">Question 1 of 5</span>
+                <span class="quiz-counter" style="margin-left:var(--s2)"
+                      th:text="${total} + ' questions'" th:if="${showAll}">5 questions</span>
+            </div>
+            <a class="btn btn-ghost btn-sm" th:href="@{/quiz/start}"
+               data-confirm-link="Quit this quiz? Your answers won't be saved.">Quit</a>
+        </div>
+
+        <div class="progress mb-6">
+            <div class="progress-bar"
+                 th:style="'width:' + ${showAll ? 100 : ((index + 1) * 100 / total)} + '%'"></div>
+        </div>
+
+        <!-- ============ ONE QUESTION AT A TIME ============ -->
+        <form th:action="@{/quiz/submit}" method="post" data-quiz-form th:if="${!showAll}">
+            <input type="hidden" name="all" value="false">
+            <input type="hidden" name="index" th:value="${index}">
+
+            <div class="card">
+                <p class="question-prompt" th:text="${question.prompt}">Question?</p>
+
+                <div class="stack-sm">
+                    <!--/* After "Check answer": the right option turns green, the student's wrong pick turns red, and the rest fade out. Before that, no extra class is added. */-->
+                    <label class="option" th:each="letter : ${ {'A','B','C','D'} }"
+                           th:classappend="${checked} ? (${question.isCorrect(letter)} ? 'option-correct'
+                                         : (${selected == letter} ? 'option-wrong' : 'option-locked')) : ''">
+                        <input type="radio" th:name="'answer.' + ${question.id}" th:value="${letter}"
+                               th:checked="${selected == letter}" th:disabled="${checked}"
+                               th:required="${instantFeedback and !checked}">
+                        <span class="option-key" th:text="${letter}">A</span>
+                        <span class="option-text" th:text="${question.optionText(letter)}">Option</span>
+                    </label>
+                </div>
+
+                <!-- Instant feedback, shown once the answer has been checked -->
+                <!--/* The feedback box. Only shown after the student has checked this question's answer. */-->
+                <div class="alert mt-6 mb-0" role="status" th:if="${checked}"
+                     th:classappend="${question.isCorrect(selected)} ? 'alert-success' : 'alert-danger'">
+                    <svg th:if="${question.isCorrect(selected)}" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"
+                         stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    <svg th:unless="${question.isCorrect(selected)}" width="16" height="16" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"
+                         stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    <div>
+                        <strong th:text="${question.isCorrect(selected)} ? 'Correct!'
+                                        : 'Not quite — the answer is ' + ${question.correctOption} + '.'">Correct!</strong>
+                        <span style="display:block"
+                              th:if="${question.explanation != null and !question.explanation.isBlank()}"
+                              th:text="${question.explanation}">Explanation</span>
+                    </div>
+                </div>
+
+                <p class="hint mt-6 mb-0" th:unless="${checked}">
+                    Tip: press <kbd>1</kbd>–<kbd>4</kbd> to answer,
+                    <kbd>Enter</kbd> <span th:text="${instantFeedback} ? 'to check your answer.' : 'to continue.'">to continue.</span>
+                </p>
+            </div>
+
+            <div class="quiz-nav">
+                <!-- The primary button comes first so pressing Enter triggers it. -->
+                <button class="btn btn-primary" type="submit" name="action" value="check"
+                        th:if="${instantFeedback and !checked}" data-quiz-primary>Check answer</button>
+                <th:block th:unless="${instantFeedback and !checked}">
+                    <button class="btn btn-primary" type="submit" name="action" value="next"
+                            th:if="${index < total - 1}" data-quiz-primary>Next question →</button>
+                    <button class="btn btn-primary" type="submit" name="action" value="finish"
+                            th:if="${index == total - 1}" data-quiz-primary>Finish quiz</button>
+                </th:block>
+
+                <button class="btn btn-secondary quiz-nav-back" type="submit" name="goto"
+                        th:value="${index - 1}" th:if="${index > 0}" formnovalidate>← Previous</button>
+            </div>
+
+            <!-- Jump to any question -->
+            <div class="card card-pad-sm mt-6" style="margin-top:var(--s8)">
+                <p class="text-xs text-subtle mb-2">
+                    Jump to question
+                    <span th:text="'· ' + ${answers.size()} + ' of ' + ${total} + ' answered'">· 0 of 5 answered</span>
+                </p>
+                <div class="row row-wrap" style="gap:6px">
+                    <!--/* Numbered buttons for every question. "goto" tells the server which one to show next. formnovalidate lets you jump away without answering first. */-->
+                    <button type="submit" name="goto" formnovalidate
+                            th:each="q, iter : ${questions}"
+                            th:value="${iter.index}"
+                            class="btn btn-sm"
+                            th:classappend="${iter.index == index} ? 'btn-primary'
+                                          : (${answers.containsKey(q.id)} ? 'btn-secondary quiz-jump-answered' : 'btn-secondary')"
+                            th:attr="aria-current=${iter.index == index} ? 'step' : null,
+                                     aria-label='Question ' + ${iter.count} + (${answers.containsKey(q.id)} ? ', answered' : '')"
+                            th:text="${iter.count}">1</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- ============ ALL QUESTIONS AT ONCE ============ -->
+        <form th:action="@{/quiz/submit}" method="post" data-quiz-form th:if="${showAll}">
+            <input type="hidden" name="all" value="true">
+
+            <div class="stack">
+                <div class="card" th:each="q, iter : ${questions}">
+                    <div class="row-between mb-4">
+                        <span class="badge badge-outline" th:text="'Q' + ${iter.count}">Q1</span>
+                        <span class="badge"
+                              th:classappend="${q.difficulty.name() == 'EASY'} ? 'badge-mint'
+                                            : (${q.difficulty.name() == 'HARD'} ? 'badge-rose' : 'badge-amber')"
+                              th:text="${#strings.capitalize(#strings.toLowerCase(q.difficulty.name()))}">Medium</span>
+                    </div>
+
+                    <p class="question-prompt" style="font-size:var(--text-lg)"
+                       th:text="${q.prompt}">Question?</p>
+
+                    <div class="stack-sm">
+                        <label class="option" th:each="letter : ${ {'A','B','C','D'} }">
+                            <input type="radio" th:name="'answer.' + ${q.id}" th:value="${letter}"
+                                   th:checked="${answers[q.id] == letter}">
+                            <span class="option-key" th:text="${letter}">A</span>
+                            <span class="option-text" th:text="${q.optionText(letter)}">Option</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quiz-nav">
+                <a class="btn btn-secondary" th:href="@{/quiz/start}">← Back to setup</a>
+                <button class="btn btn-primary btn-lg" type="submit" name="action" value="finish">Submit answers</button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>
