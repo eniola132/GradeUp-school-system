@@ -1,0 +1,15 @@
+# Render Blueprint for GradeUp.
+# The H2 database and uploaded PDFs use /tmp on Render, so demo data resets
+# whenever the free service restarts. Use MySQL and persistent object storage
+# before relying on this deployment for production data.
+services:
+  - type: web
+    name: gradeup
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        value: jdbc:h2:file:/tmp/gradeup;DB_CLOSE_DELAY=-1
+      - key: GRADEUP_STORAGE_LOCATION
+        value: /tmp/gradeup-handouts
